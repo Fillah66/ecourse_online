@@ -29,6 +29,7 @@ class StoreCourseRequest extends FormRequest
             'category_id' => 'required|integer',
             'thumbnail' => 'required|image|mimes:png,jpg,svg',
             'course_keypoints.*' => 'required|string|max:255',
+            'price' => 'required',
         ];
     }
 }

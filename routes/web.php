@@ -24,37 +24,36 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     //must logged in before create a transaction
-    Route::get('/checkout', [FrontController::class, 'checkout'])->name('front.checkout')->middleware('role:student');
-    
-    Route::post('/checkout/store', [FrontController::class, 'checkout_store'])->name('front.checkout.store')->middleware('role:student');
+    Route::get('/checkout/{course}', [FrontController::class, 'checkout'])->name('front.checkout');
+
+    Route::post('/checkout/store/{course}', [FrontController::class, 'checkout_store'])->name('front.checkout.store');
 
     //domain.com/learning/100/5
-    Route::get('/learning/{course}/{courseVideoId}', [FrontController::class, 'learning'])->name('front.learning')->middleware('role:student|teacher|owner');
+    Route::get('/learning/{course}/{courseVideoId}', [FrontController::class, 'learning'])->name('front.learning');
 
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', CategoryController::class)->middleware('role:owner');
-        
+
         Route::resource('teachers', TeacherController::class)
-        ->middleware('role:owner');
+            ->middleware('role:owner');
 
         Route::resource('courses', CourseController::class)
-        ->middleware('role:owner|teacher');
+            ->middleware('role:owner|teacher');
 
         Route::resource('subscribe_transactions', SubscribeTransactionController::class)
-        ->middleware('role:owner');
+            ->middleware('role:owner');
 
         Route::get('/add/video/save/{course:id}', [CourseVideoController::class, 'create'])
-        ->middleware('role:teacher|owner')->name('course.add_video');
+            ->middleware('role:teacher|owner')->name('course.add_video');
 
         Route::post('/add/video/save/{course:id}', [CourseVideoController::class, 'store'])
-        ->middleware('role:teacher|owner')->name('course.add_video.save');
+            ->middleware('role:teacher|owner')->name('course.add_video.save');
 
         Route::resource('course_videos', CourseVideoController::class)
-        ->middleware('role:owner|teacher');
+            ->middleware('role:owner|teacher');
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

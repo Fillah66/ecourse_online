@@ -18,25 +18,31 @@ class Course extends Model
         'thumbnail',
         'teacher_id',
         'category_id',
+        'price',
     ];
 
-    public function category(){
+    public function category()
+    {
         return $this->belongsTo(Category::class);
     }
 
-    public function teacher(){
+    public function teacher()
+    {
         return $this->belongsTo(Teacher::class);
     }
 
-    public function course_videos(){
+    public function course_videos()
+    {
         return $this->hasMany(CourseVideo::class);
     }
 
-    public function course_keypoints(){
+    public function course_keypoints()
+    {
         return $this->hasMany(CourseKeypoint::class);
     }
 
-    public function students(){
+    public function students()
+    {
         return $this->belongsToMany(User::class, 'course_students');
     }
 }
