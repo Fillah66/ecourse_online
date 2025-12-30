@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreSubscribeTransactionRequest;
-use App\Models\Category;
 use App\Models\Course;
-use App\Models\SubscribeTransaction;
+use App\Models\Category;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use App\Models\MateriProgress;
 use Illuminate\Support\Facades\DB;
+use App\Models\SubscribeTransaction;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreSubscribeTransactionRequest;
+use App\Models\Certificate;
+use App\Models\CourseVideo;
 
 class FrontController extends Controller
 {
@@ -43,7 +46,9 @@ class FrontController extends Controller
 
     public function checkout($course)
     {
-        if (Auth::user()->hasActiveSubscription()) {
+        $courseId = $course;
+
+        if (Auth::user()->hasActiveSubscriptionForCourse($courseId)) {
             return redirect()->route('front.index');
         }
         $course = Course::where('slug', $course)->first();
@@ -53,8 +58,8 @@ class FrontController extends Controller
     public function checkout_store(StoreSubscribeTransactionRequest $request, $course)
     {
         $user = Auth::user();
-
-        if (Auth::user()->hasActiveSubscription()) {
+        $courseId = $course;
+        if (Auth::user()->hasActiveSubscriptionForCourse($courseId)) {
             return redirect()->route('front.index');
         }
         $courses = Course::where('slug', $course)->first();
@@ -83,16 +88,74 @@ class FrontController extends Controller
     public function learning(Course $course, $courseVideoId)
     {
         $user = Auth::user();
-        $video = $course->course_videos->firstWhere('id', $courseVideoId);
+
+        // 1. cek subscription
         $isSubscribed = SubscribeTransaction::where('user_id', $user->id)
             ->where('course_id', $course->id)
-            ->where('is_paid', true) // jika ada status
+            ->where('is_paid', true)
             ->exists();
 
         if (! $isSubscribed) {
-            return view('front.pricing', compact('course', 'video'));
+            return view('front.pricing', compact('course'));
         }
 
-        return view('front.learning', compact('course', 'video'));
+        // 2. ambil semua video terurut
+        $videos = $course->course_videos()->orderBy('id')->get();
+
+        // 3. video aktif
+        $video = $videos->firstWhere('id', $courseVideoId);
+        if (! $video) abort(404);
+
+        // 4. video sebelumnya
+        $previousVideo = $videos->where('id', '<', $video->id)->last();
+
+        // 5. cegah loncat materi
+        if ($previousVideo) {
+            $isCompleted = MateriProgress::where('user_id', $user->id)
+                ->where('course_video_id', $previousVideo->id)
+                ->where('is_completed', true)
+                ->exists();
+
+            if (! $isCompleted) {
+                return redirect()->route('front.learning', [
+                    $course,
+                    'courseVideoId' => $previousVideo->id
+                ])->with('error', 'Selesaikan materi sebelumnya terlebih dahulu');
+            }
+        }
+
+        return view('front.learning', compact('course', 'video', 'videos'));
+    }
+
+    public function completeMateri(CourseVideo $video)
+    {
+        $user = Auth::user();
+        MateriProgress::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'course_id' => $video->course_id,
+                'course_video_id' => $video->id,
+            ],
+            [
+                'is_completed' => true,
+            ]
+        );
+
+        // cek apakah course selesai
+        $total = $video->course->course_videos()->count();
+
+        $completed = MateriProgress::where('user_id', $user->id)
+            ->where('course_id', $video->course_id)
+            ->where('is_completed', true)
+            ->count();
+
+        if ($total === $completed) {
+            Certificate::firstOrCreate([
+                'user_id' => $user->id,
+                'course_id' => $video->course_id,
+            ]);
+        }
+
+        return back()->with('success', 'Materi selesai');
     }
 }

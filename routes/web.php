@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseVideoController;
 use App\Http\Controllers\DashboardController;
@@ -30,7 +31,10 @@ Route::middleware('auth')->group(function () {
 
     //domain.com/learning/100/5
     Route::get('/learning/{course}/{courseVideoId}', [FrontController::class, 'learning'])->name('front.learning');
-
+    Route::post(
+        '/materi/{video}/complete',
+        [FrontController::class, 'completeMateri']
+    )->name('materi.complete');
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', CategoryController::class)->middleware('role:owner');
 
@@ -54,6 +58,8 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/certificate/{user}', [CertificateController::class, 'index'])->name('certificate');
+    Route::get('/certificate/download/{id}', [CertificateController::class, 'download'])->name('certificate.download');
 });
 
 require __DIR__ . '/auth.php';

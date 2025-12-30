@@ -40,6 +40,10 @@ class Course extends Model
     {
         return $this->hasMany(CourseKeypoint::class);
     }
+    public function materials()
+    {
+        return $this->hasMany(MateriProgress::class);
+    }
 
     public function students()
     {
