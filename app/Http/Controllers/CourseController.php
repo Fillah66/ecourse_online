@@ -26,16 +26,15 @@ class CourseController extends Controller
         $user = Auth::user();
         $query = Course::with(['category', 'teacher', 'students'])->orderByDesc('id');
 
-        if($user->hasRole('teacher')) {
+        if ($user->hasRole('teacher')) {
             $query->whereHas('teacher', function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             });
         }
 
         $courses = $query->paginate(10);
-        
-        return view('admin.courses.index', compact('courses'));
 
+        return view('admin.courses.index', compact('courses'));
     }
 
     /**
@@ -56,14 +55,14 @@ class CourseController extends Controller
         //
         $teacher = Teacher::where('user_id', Auth::user()->id)->first();
 
-        if(!$teacher) {
+        if (!$teacher) {
             return redirect()->route('admin.courses.index')->withErrors('Unauthorized or invalid teacher.');
         }
 
         DB::transaction(function () use ($request, $teacher) {
             $validated = $request->validated();
 
-            if($request->hasFile('thumbnail')) {
+            if ($request->hasFile('thumbnail')) {
                 $thumbnailPath = $request->file('thumbnail')->store('thumbnail', 'public');
                 $validated['thumbnail'] = $thumbnailPath;
             }
@@ -72,10 +71,10 @@ class CourseController extends Controller
 
             $validated['teacher_id'] = $teacher->id;
 
-            $course =Course::create($validated);
+            $course = Course::create($validated);
 
-            if(!empty($validated['course_keypoints'])) {
-                foreach($validated['course_keypoints'] as $keypointText) {
+            if (!empty($validated['course_keypoints'])) {
+                foreach ($validated['course_keypoints'] as $keypointText) {
                     $course->course_keypoints()->create([
                         'name' => $keypointText,
                     ]);
@@ -84,7 +83,6 @@ class CourseController extends Controller
         });
 
         return redirect()->route('admin.courses.index');
-
     }
 
     /**
@@ -116,10 +114,10 @@ class CourseController extends Controller
     {
         //
         DB::transaction(function () use ($request, $course) {
-            
+
             $validated = $request->validated();
 
-            if($request->hasFile('thumbnail')) {
+            if ($request->hasFile('thumbnail')) {
                 $thumbnailPath = $request->file('thumbnail')->store('thumbnail', 'public');
                 $validated['thumbnail'] = $thumbnailPath;
             }
@@ -128,9 +126,9 @@ class CourseController extends Controller
 
             $course->update($validated);
 
-            if(!empty($validated['course_keypoints'])) {
+            if (!empty($validated['course_keypoints'])) {
                 $course->course_keypoints()->delete();
-                foreach($validated['course_keypoints'] as $keypointText) {
+                foreach ($validated['course_keypoints'] as $keypointText) {
                     $course->course_keypoints()->create([
                         'name' => $keypointText,
                     ]);
@@ -149,14 +147,14 @@ class CourseController extends Controller
         //
         DB::beginTransaction();
 
-        try{
+        try {
             $course->delete();
             DB::commit();
-            
+
             return redirect()->route('admin.courses.index');
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             DB::rollBack();
-             return redirect()->route('admin.courses.index')->with('error', 'terjadinya sebuah error');
+            return redirect()->route('admin.courses.index')->with('error', 'terjadinya sebuah error');
         }
     }
 }

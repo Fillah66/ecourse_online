@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('subscribe_transactions', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('total_amount');
+            $table->decimal('total_amount', 15, 2);
             $table->boolean('is_paid');
             $table->date('subscription_start_date')->nullable();
             $table->string('proof');

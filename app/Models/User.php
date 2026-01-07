@@ -50,19 +50,33 @@ class User extends Authenticatable
         ];
     }
 
-    public function courses(){
+    public function courses()
+    {
         return $this->belongsToMany(Course::class, 'course_students');
     }
-    
-    public function subscribe_transactions(){
+
+    public function certificat()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+    public function subscribe_transactions()
+    {
         return $this->hasMany(SubscribeTransaction::class);
     }
+    public function hasActiveSubscriptionForCourse($courseId)
+    {
+        return $this->subscribe_transactions()
+            ->where('course_id', $courseId)
+            ->where('is_paid', true)
+            ->exists();
+    }
 
-    public function hasActiveSubscription(){
+    public function hasActiveSubscription()
+    {
         $latesSubscription = $this->subscribe_transactions()
-        ->where('is_paid', true)
-        ->latest('updated_at')
-        ->first();
+            ->where('is_paid', true)
+            ->latest('updated_at')
+            ->first();
 
         if (!$latesSubscription) {
             return false;

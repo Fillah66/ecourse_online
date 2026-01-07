@@ -11,7 +11,8 @@ class StoreSubscribeTransactionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['student']);
+        return true;
+        // return $this->user()->hasAnyRole(['student']);
     }
 
     /**
